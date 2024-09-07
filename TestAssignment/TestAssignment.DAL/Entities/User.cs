@@ -20,5 +20,7 @@ namespace TestAssignment.DAL.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<UserTask>? Tasks { get; set; }
     }
 }

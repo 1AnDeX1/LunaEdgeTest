@@ -14,8 +14,15 @@ namespace TestAssignment.BLL
         public AutomapperProfile()
         {
             CreateMap<User, UserDto>().ReverseMap();
-            CreateMap<User, LoginUserDto>().ReverseMap();
-
+            CreateMap<User, LoginUserDto>().ReverseMap(); 
+            CreateMap<User, RegisterUserDto>().ReverseMap();
+            CreateMap<UserTask, UserTaskDto>();
+            CreateMap<CreateTaskDto, UserTask>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore()); 
+            CreateMap<UserTask, UserTaskDto>();
+            CreateMap<UserTask, UserTaskDto>();
+            CreateMap<UpdateTaskDto, UserTask>();
         }
     }
 }

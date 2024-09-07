@@ -16,22 +16,20 @@ namespace TestAssignment.API.Controller
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IConfiguration _config;
 
         public UserController(IUserService userService,
             IConfiguration config)
         {
             _userService = userService;
-            _config = config;
         }
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register(UserDto userDto)
+        public async Task<IActionResult> Register(RegisterUserDto registeruserDto)
         {
             try
             {
-                await _userService.RegisterAsync(userDto);
+                await _userService.RegisterAsync(registeruserDto);
                 return Ok("User registered successfully");
             }
             catch (Exception ex)
@@ -48,33 +46,11 @@ namespace TestAssignment.API.Controller
 
             if (user != null)
             {
-                var token = Generate(user);
+                var token = _userService.GenerateToken(user);
                 return Ok(token);
             }
 
             return NotFound("User not found");
-        }
-
-        private string Generate(UserDto user)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Username),
-                new Claim(ClaimTypes.Email, user.Email),
-            };
-
-            var token = new JwtSecurityToken(
-                _config["Jwt:Issuer"],
-                _config["Jwt:Audience"],
-                claims,
-                expires: DateTime.Now.AddMinutes(15),
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

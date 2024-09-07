@@ -5,6 +5,11 @@ using TestAssignment.DAL.Entities;
 using TestAssignment.DAL.Interfaces;
 using TestAssignment.BLL.Models;
 using System.Text.RegularExpressions;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace TestAssignment.BLL.Services
 {
@@ -13,38 +18,41 @@ namespace TestAssignment.BLL.Services
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IMapper _mapper;
+        private readonly IConfiguration _config;
 
         public UserService(
             IUserRepository userRepository,
             IPasswordHasher passwordHasher,
+            IConfiguration config,
             IMapper mapper)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _mapper = mapper;
+            _config = config;
         }
 
 
-        public async Task RegisterAsync(UserDto userDto)
+        public async Task RegisterAsync(RegisterUserDto registerUserDto)
         {
-            if (await _userRepository.ExistsByEmailAsync(userDto.Email) 
-                || await _userRepository.ExistsByUsernameAsync(userDto.Username))
+            if (await _userRepository.ExistsByEmailAsync(registerUserDto.Email) 
+                || await _userRepository.ExistsByUsernameAsync(registerUserDto.Username))
             {
                 throw new AppException("User with this email or username already exists");
             }
 
             try
             {
-                ValidatePassword(userDto.Password);
+                ValidatePassword(registerUserDto.Password);
             }
             catch (AppException ex)
             {
                 throw new AppException($"Password validation failed: {ex.Message}");
             }
 
-            var hashedPassword = _passwordHasher.Generate(userDto.Password);
+            var hashedPassword = _passwordHasher.Generate(registerUserDto.Password);
 
-            var user = _mapper.Map<User>(userDto);
+            var user = _mapper.Map<User>(registerUserDto);
             user.PasswordHash = hashedPassword;
 
             await _userRepository.AddAsync(user);
@@ -93,6 +101,29 @@ namespace TestAssignment.BLL.Services
             {
                 throw new AppException("Password must contain at least one special character (e.g. !@#$%^&*).");
             }
+        }
+
+        public string GenerateToken(UserDto user)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Email, user.Email),
+            };
+
+            var token = new JwtSecurityToken(
+                _config["Jwt:Issuer"],
+                _config["Jwt:Audience"],
+                claims,
+                expires: DateTime.Now.AddMinutes(15),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

@@ -9,7 +9,8 @@ namespace TestAssignment.BLL.Interfaces
 {
     public interface IUserService
     {
-        Task RegisterAsync(UserDto userDto);
+        Task RegisterAsync(RegisterUserDto userDto);
         Task<UserDto> LoginAsync(LoginUserDto loginUserDto);
+        string GenerateToken(UserDto user);
     }
 }
