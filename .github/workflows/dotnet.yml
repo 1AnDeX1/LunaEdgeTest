@@ -19,10 +19,11 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Restore dependencies
-      run: dotnet restore TestAssignment.API/TestAssignment.API.csproj
+      run: dotnet restore TestAssignment/TestAssignment.API/TestAssignment.API.csproj
 
     - name: Build
-      run: dotnet build TestAssignment.API/TestAssignment.API.csproj --no-restore
+      run: dotnet build TestAssignment/TestAssignment.API/TestAssignment.API.csproj --no-restore
 
     - name: Test
-      run: dotnet test TestAssignment.API/TestAssignment.API.csproj --no-build --verbosity normal
+      run: dotnet test TestAssignment/TestAssignment.API/TestAssignment.API.csproj --no-build --verbosity normal
+
